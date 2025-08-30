@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Quiz</title>
+
+   <!-- font awesome cdn link  -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css">
+
+   <!-- custom css file link  -->
+   <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+<header class="header">
+   
+   <section class="flex">
+
+      <a href="index.html" class="logo">Educa.</a>
+
+      <!-- <form action="search.html" method="post" class="search-form">
+         <input type="text" name="search_box" required placeholder="search courses..." maxlength="100">
+         <button type="submit" class="fas fa-search"></button>
+      </form> -->
+
+      <div class="icons">
+         <div id="menu-btn" class="fas fa-bars"></div>
+         <div id="search-btn" class="fas fa-search"></div>
+         <div id="user-btn" class="fas fa-user"></div>
+         <div id="toggle-btn" class="fas fa-sun"></div>
+      </div>
+
+      <div class="profile">
+         <img src="images/pic-1.jpg" class="image" alt="">
+         <h3 class="name">user</h3>
+         <p class="role">student</p>
+         <a href="profile.html" class="btn">view profile</a>
+         <div class="flex-btn">
+            <a href="login.html" class="option-btn">login</a>
+            <a href="register.html" class="option-btn">register</a>
+         </div>
+      </div>
+
+   </section>
+
+</header>   
+
+<div class="side-bar">
+
+   <div id="close-btn">
+      <i class="fas fa-times"></i>
+   </div>
+
+   <div class="profile">
+      <img src="images/pic-1.jpg" class="image" alt="">
+      <h3 class="name">user</h3>
+      <p class="role">student</p>
+      <a href="profile.html" class="btn">view profile</a>
+   </div>
+
+   <nav class="navbar">
+      <a href="index.html"><i class="fas fa-home"></i><span>home</span></a>
+      <a href="about.html"><i class="fas fa-question"></i><span>about</span></a>
+      <a href="courses.html"><i class="fas fa-graduation-cap"></i><span>courses</span></a>
+      <a href="teachers.html"><i class="fas fa-chalkboard-user"></i><span>teachers</span></a>
+      <a href="contact.html"><i class="fas fa-headset"></i><span>contact us</span></a>
+      <a href="quiz.html"><i class="fas fa-question"></i><span>quiz</span></a>
+   </nav>
+
+</div>
+
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .quiz-container {
+      background-color: white;
+      max-width: 600px;
+      margin: auto;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .question {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .options {
+      list-style: none;
+      padding: 0;
+    }
+
+    .options li {
+      margin: 8px 0;
+    }
+
+    .options button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #e7e7e7;
+      border: none;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    .options button:hover {
+      background-color: #d4d4d4;
+    }
+
+    .result {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .next-btn {
+      display: block;
+      margin: 20px auto 0;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .next-btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+<div class="quiz-container">
+  <h1> Quiz</h1>
+  <div id="quiz">
+    <div class="question" id="question">Question text here</div>
+    <ul class="options" id="options"></ul>
+    <button class="next-btn" id="nextBtn">Next</button>
+    <div class="result" id="result"></div>
+  </div>
+</div>
+
+<script>
+  const quizData = [
+    {
+      question: "What does HTML stand for?",
+      options: [
+        "Hyper Text Markup Language",
+        "Home Tool Markup Language",
+        "Hyperlinks and Text Markup Language",
+        "High-Level Text Machine Language"
+      ],
+      answer: "Hyper Text Markup Language"
+    },
+    {
+      question: "Which symbol is used for comments in JavaScript?",
+      options: ["//", "/* */", "#", "<!-- -->"],
+      answer: "//"
+    },
+    {
+      question: "What does CSS stand for?",
+      options: [
+        "Colorful Style Sheets",
+        "Computer Style Sheets",
+        "Cascading Style Sheets",
+        "Creative Style Syntax"
+      ],
+      answer: "Cascading Style Sheets"
+    },
+    {
+      question: "Which HTML tag is used to link JavaScript?",
+      options: ["<js>", "<script>", "<link>", "<javascript>"],
+      answer: "<script>"
+    },
+    {
+      question: "How do you declare a variable in JavaScript?",
+      options: ["let x;", "int x;", "x = 10;", "define x;"],
+      answer: "let x;"
+    },
+    {
+      question: "Which company developed JavaScript?",
+      options: ["Netscape", "Microsoft", "Google", "Apple"],
+      answer: "Netscape"
+    },
+    {
+      question: "Which CSS property controls the text size?",
+      options: ["font-style", "text-size", "font-size", "text-style"],
+      answer: "font-size"
+    },
+    {
+      question: "What is the correct way to link a CSS file in HTML?",
+      options: [
+        "<link rel='stylesheet' href='style.css'>",
+        "<style src='style.css'>",
+        "<css src='style.css'>",
+        "<script src='style.css'>"
+      ],
+      answer: "<link rel='stylesheet' href='style.css'>"
+    },
+    {
+      question: "Inside which HTML element do we put JavaScript code?",
+      options: ["<script>", "<js>", "<javascript>", "<code>"],
+      answer: "<script>"
+    },
+    {
+      question: "What is the default value of a variable declared with 'var'?",
+      options: ["undefined", "null", "0", "'' (empty string)"],
+      answer: "undefined"
+    },
+    {
+      question: "Which of the following is a JavaScript framework?",
+      options: ["Django", "Laravel", "React", "Rails"],
+      answer: "React"
+    },
+    {
+      question: "Which event occurs when a user clicks on an HTML element?",
+      options: ["onmouseover", "onchange", "onclick", "onsubmit"],
+      answer: "onclick"
+    },
+    {
+      question: "What keyword is used to define a constant in JavaScript?",
+      options: ["var", "const", "let", "define"],
+      answer: "const"
+    },
+    {
+      question: "How do you write a conditional in JavaScript?",
+      options: [
+        "if (x > y)",
+        "if x > y then",
+        "when (x > y)",
+        "if x > y {}"
+      ],
+      answer: "if (x > y)"
+    },
+    {
+      question: "Which operator is used to assign a value?",
+      options: ["==", "=", "===", "!="],
+      answer: "="
+    }
+  ];
+
+  let currentQuestion = 0;
+  let score = 0;
+
+  const questionEl = document.getElementById("question");
+  const optionsEl = document.getElementById("options");
+  const nextBtn = document.getElementById("nextBtn");
+  const resultEl = document.getElementById("result");
+
+  function loadQuestion() {
+    const current = quizData[currentQuestion];
+    questionEl.textContent = `Q${currentQuestion + 1}: ${current.question}`;
+    optionsEl.innerHTML = "";
+    current.options.forEach(option => {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.textContent = option;
+      button.onclick = () => selectAnswer(option);
+      li.appendChild(button);
+      optionsEl.appendChild(li);
+    });
+    resultEl.textContent = "";
+  }
+
+  function selectAnswer(selected) {
+    const correct = quizData[currentQuestion].answer;
+    if (selected === correct) {
+      score++;
+      resultEl.textContent = "✅ Correct!";
+      resultEl.style.color = "#4caf50";
+    } else {
+      resultEl.textContent = `❌ Wrong! Correct: ${correct}`;
+      resultEl.style.color = "red";
+    }
+    Array.from(optionsEl.querySelectorAll("button")).forEach(btn => {
+      btn.disabled = true;
+    });
+  }
+
+  nextBtn.addEventListener("click", () => {
+    currentQuestion++;
+    if (currentQuestion < quizData.length) {
+      loadQuestion();
+    } else {
+      showFinalScore();
+    }
+  });
+
+  function showFinalScore() {
+    questionEl.textContent = "🎉 Quiz Completed!";
+    optionsEl.innerHTML = "";
+    resultEl.textContent = `You scored ${score} out of ${quizData.length}`;
+    resultEl.style.color = "#000";
+    nextBtn.style.display = "none";
+  }
+
+  loadQuestion();
+</script>
+
+
+
+
+
+
+<footer class="footer">
+
+   &copy; copyright @ 2025 by <span>Papito</span> | all rights reserved!
+
+</footer>
+
+<!-- custom js file link  -->
+<script src="js/script.js"></script>
+
+   
+</body>
+</html>
