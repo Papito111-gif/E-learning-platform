@@ -151,6 +151,7 @@
 
 <div class="quiz-container">
   <h1> Quiz</h1>
+  <button id="voiceToggle" class="next-btn" style="background-color:green;">🔊 Voice: ON</button>
   <div id="quiz">
     <div class="question" id="question">Question text here</div>
     <ul class="options" id="options"></ul>
@@ -312,6 +313,51 @@
     resultEl.style.color = "#000";
     nextBtn.style.display = "none";
   }
+ 
+  const synth = window.speechSynthesis;
+  let voiceEnabled = true;
+
+  const voiceToggle = document.getElementById("voiceToggle");
+
+  function speak(text) {
+    if (!voiceEnabled) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 0.9;
+    utter.pitch = 1;
+    synth.cancel(); // Stop any previous speech
+    synth.speak(utter);
+  }
+
+  voiceToggle.addEventListener("click", () => {
+    voiceEnabled = !voiceEnabled;
+    voiceToggle.textContent = voiceEnabled ? "🔊 Voice: ON" : "🔇 Voice: OFF";
+  });
+
+  // Override loadQuestion to add voice
+  const originalLoadQuestion = loadQuestion;
+  loadQuestion = function () {
+    originalLoadQuestion();
+    const current = quizData[currentQuestion];
+    let text = `Question ${currentQuestion + 1}: ${current.question}.`;
+    current.options.forEach((opt, idx) => {
+      text += ` Option ${idx + 1}: ${opt}.`;
+    });
+    speak(text);
+  };
+
+  // Override selectAnswer to add voice feedback
+  const originalSelectAnswer = selectAnswer;
+  selectAnswer = function (selected) {
+    originalSelectAnswer(selected);
+    const correct = quizData[currentQuestion].answer;
+    const feedback = selected === correct ? "Correct!" : `Wrong! The correct answer is ${correct}.`;
+    speak(feedback);
+  };
+
+  // Speak intro on first load
+  window.addEventListener("load", () => {
+    speak("Welcome to the quiz section.What does HTML stand for?.Hyper Text Markup Language.Home Tool Markup Language.Hyperlinks and Text Markup Language.High-Level Text Machine Language.");
+  });
 
   loadQuestion();
 </script>
