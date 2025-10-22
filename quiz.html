@@ -88,31 +88,11 @@
 
 <script>
   const quizData = [
-    {
-      question: "What does HTML stand for?",
-      options: ["Hyper Text Markup Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language", "High-level Machine Language"],
-      answer: "A"
-    },
-    {
-      question: "Which tag is used to create a hyperlink?",
-      options: ["<a>", "<link>", "<href>", "<hyperlink>"],
-      answer: "A"
-    },
-    {
-      question: "Which HTML tag is used to insert an image?",
-      options: ["<img>", "<image>", "<src>", "<picture>"],
-      answer: "A"
-    },
-    {
-      question: "Which tag is used for an ordered list?",
-      options: ["<ol>", "<ul>", "<list>", "<order>"],
-      answer: "A"
-    },
-    {
-      question: "Which tag defines the largest heading?",
-      options: ["<h1>", "<h6>", "<header>", "<head>"],
-      answer: "A"
-    }
+    { question: "What does HTML stand for?", options: ["Hyper Text Markup Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language", "High-level Machine Language"], answer: "A" },
+    { question: "Which tag is used to create a hyperlink?", options: ["<a>", "<link>", "<href>", "<hyperlink>"], answer: "A" },
+    { question: "Which HTML tag is used to insert an image?", options: ["<img>", "<image>", "<src>", "<picture>"], answer: "A" },
+    { question: "Which tag is used for an ordered list?", options: ["<ol>", "<ul>", "<list>", "<order>"], answer: "A" },
+    { question: "Which tag defines the largest heading?", options: ["<h1>", "<h6>", "<header>", "<head>"], answer: "A" }
   ];
 
   const synth = window.speechSynthesis;
@@ -128,7 +108,6 @@
   const startBtn = document.getElementById("startBtn");
   const voiceToggle = document.getElementById("voiceToggle");
 
-  // Speak text
   function speak(text) {
     if (!voiceEnabled || stopped) return;
     const utter = new SpeechSynthesisUtterance(text);
@@ -138,14 +117,12 @@
     synth.speak(utter);
   }
 
-  // Stop all speech
   function stopSpeech() {
     synth.cancel();
     stopped = true;
     recognition.stop();
   }
 
-  // Load question
   function loadQuestion() {
     const q = quizData[currentQuestion];
     questionEl.textContent = `Q${currentQuestion + 1}: ${q.question}`;
@@ -165,7 +142,6 @@
     speak(textToSpeak);
   }
 
-  // Check answer
   function checkAnswer(ans) {
     const correct = quizData[currentQuestion].answer;
     if (ans.toUpperCase() === correct) {
@@ -180,15 +156,14 @@
         } else {
           showScore();
         }
-      }, 2000);
+      }, 1500);
     } else {
       resultEl.textContent = `❌ Wrong! The correct answer is ${correct}`;
       speak(`Wrong. The correct answer is ${correct}.`);
-      setTimeout(() => startListening(), 2500);
+      setTimeout(() => startListening(), 2000);
     }
   }
 
-  // Final score
   function showScore() {
     questionEl.textContent = "🎉 Quiz Completed!";
     optionsEl.innerHTML = "";
@@ -198,21 +173,34 @@
     voiceToggle.style.display = "none";
   }
 
-  // Speech recognition setup
+  // Improved voice recognition
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "en-US";
   recognition.interimResults = false;
   recognition.continuous = false;
 
   recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript.trim().toUpperCase();
+    let transcript = event.results[0][0].transcript.trim().toLowerCase();
     console.log("Heard:", transcript);
-    if (["A", "B", "C", "D"].includes(transcript)) {
-      checkAnswer(transcript);
+
+    // Fix for common variants
+    if (transcript.includes("hey") || transcript === "a" || transcript.includes("ay")) transcript = "a";
+    else if (transcript.includes("b") || transcript.includes("bee") || transcript.includes("be")) transcript = "b";
+    else if (transcript.includes("c") || transcript.includes("see") || transcript.includes("sea")) transcript = "c";
+    else if (transcript.includes("d") || transcript.includes("dee") || transcript.includes("di")) transcript = "d";
+
+    if (["a", "b", "c", "d"].includes(transcript)) {
+      checkAnswer(transcript.toUpperCase());
     } else {
-      speak("Please say A, B, C, or D.");
+      speak("Please say A, B, C, or D clearly.");
       startListening();
     }
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Recognition error:", event.error);
+    speak("Sorry, I didn't hear you. Please try again.");
+    startListening();
   };
 
   recognition.onend = () => {
@@ -239,13 +227,13 @@
       voiceToggle.textContent = "🔇 Voice: OFF";
       voiceToggle.classList.add("paused");
     } else {
+      stopped = false;
       voiceToggle.textContent = "🔊 Voice: ON";
       voiceToggle.classList.remove("paused");
       speak("Voice resumed.");
     }
   });
 
-  // Start button
   startBtn.addEventListener("click", () => {
     if (!listening) {
       stopped = false;
@@ -257,18 +245,15 @@
     }
   });
 
-  // Back button
   function goBack() {
     stopSpeech();
-    window.location.href = "courses.html"; 
+    window.location.href = "courses.html"; // change to your page
   }
 
-  // On page unload
   window.addEventListener("beforeunload", stopSpeech);
 
-  // Start quiz
   window.addEventListener("load", () => {
-    speak("Welcome to the HTML voice quiz. This quiz is made for visually impaired users. I will read each question and the options. When you hear the question, say A, B, C, or D to answer.");
+    speak("Welcome to the HTML voice quiz. This quiz is for visually impaired users. I will read each question and the options. Please say A, B, C, or D.");
     setTimeout(() => loadQuestion(), 6000);
   });
 </script>
