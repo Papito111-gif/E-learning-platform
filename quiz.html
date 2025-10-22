@@ -17,7 +17,6 @@
   .primary { background:#4caf50; color:#fff; }
   .muted { background:#666; color:#fff; }
   .back-btn { background:#2196f3; color:#fff; }
-  .danger { background:#f44336; color:#fff; }
 </style>
 </head>
 <body>
@@ -42,20 +41,18 @@
 /* ---------- QUIZ DATA (5 questions, all answers A) ---------- */
 const quizData = [
   { question: "What does HTML stand for?", options: ["Hyper Text Markup Language","Home Tool Markup Language","Hyperlinks and Text Markup Language","High-level Machine Language"], answer: "A" },
-  { question: "Which tag is used to create a hyperlink?", options: ["<a>","<link>","<href>","<hyperlink>"], answer: "A" },
-  { question: "Which HTML tag is used to insert an image?", options: ["<img>","<image>","<src>","<picture>"], answer: "A" },
-  { question: "Which tag is used for an ordered list?", options: ["<ol>","<ul>","<list>","<order>"], answer: "A" },
-  { question: "Which tag defines the largest heading?", options: ["<h1>","<h6>","<header>","<head>"], answer: "A" }
+  { question: "Which tag is used to create a hyperlink?", options: ["&lt;a&gt;","&lt;link&gt;","&lt;href&gt;","&lt;hyperlink&gt;"], answer: "A" },
+  { question: "Which HTML tag is used to insert an image?", options: ["&lt;img&gt;","&lt;image&gt;","&lt;src&gt;","&lt;picture&gt;"], answer: "A" },
+  { question: "Which tag is used for an ordered list?", options: ["&lt;ol&gt;","&lt;ul&gt;","&lt;list&gt;","&lt;order&gt;"], answer: "A" },
+  { question: "Which tag defines the largest heading?", options: ["&lt;h1&gt;","&lt;h6&gt;","&lt;header&gt;","&lt;head&gt;"], answer: "A" }
 ];
 
-/* ---------- State ---------- */
 let currentQuestion = 0;
 let score = 0;
-let voiceEnabled = true;     // TTS on/off
-let expectingAnswer = false; // whether we expect an answer now
+let voiceEnabled = true;
+let expectingAnswer = false;
 let recognitionActive = false;
 
-/* ---------- DOM ---------- */
 const questionEl = document.getElementById('question');
 const optionsEl = document.getElementById('options');
 const resultEl = document.getElementById('result');
@@ -63,302 +60,170 @@ const startBtn = document.getElementById('startBtn');
 const voiceToggle = document.getElementById('voiceToggle');
 const backBtn = document.getElementById('backBtn');
 
-/* ---------- Feature detection ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const supportsRecognition = !!SpeechRecognition;
 const supportsTTS = 'speechSynthesis' in window;
 
 if (!supportsRecognition) {
-  resultEl.textContent = "Speech recognition is not supported in this browser. Use Chrome desktop or Chrome on Android.";
+  resultEl.textContent = "Speech recognition not supported. Use Chrome browser.";
   startBtn.disabled = true;
 }
 
-/* ---------- TTS helper that returns a promise when finished ---------- */
 function speakPromise(text) {
   return new Promise(resolve => {
-    if (!voiceEnabled || !supportsTTS) {
-      resolve();
-      return;
-    }
+    if (!voiceEnabled || !supportsTTS) return resolve();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 0.95;
-    u.pitch = 1;
     u.onend = () => resolve();
-    u.onerror = () => resolve();
-    // cancel ongoing speech to avoid overlap
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   });
 }
 
-/* ---------- Normalization: turn transcript into A/B/C/D (robust) ---------- */
 function normalizeTranscript(raw) {
   if (!raw) return null;
   const t = raw.trim().toLowerCase();
-
-  // exact letter
   if (/^\s*[abcd]\s*$/.test(t)) return t.toUpperCase();
-
-  // common words to letters
-  const map = { 'alpha':'A','ay':'A','a.':'A','first':'A','one':'A','1':'A',
-                'be':'B','bee':'B','b.':'B','second':'B','two':'B','2':'B',
-                'see':'C','sea':'C','c.':'C','third':'C','three':'C','3':'C',
-                'dee':'D','d.':'D','four':'D','fourth':'D','4':'D' };
-
-  // check if first token maps
-  const first = t.split(/\s+/)[0];
-  if (map[first]) return map[first];
-
-  // phrases
-  if (/\b(option|answer)\s*a\b/.test(t) || /\boption\s*1\b/.test(t)) return 'A';
-  if (/\b(option|answer)\s*b\b/.test(t) || /\boption\s*2\b/.test(t)) return 'B';
-  if (/\b(option|answer)\s*c\b/.test(t) || /\boption\s*3\b/.test(t)) return 'C';
-  if (/\b(option|answer)\s*d\b/.test(t) || /\boption\s*4\b/.test(t)) return 'D';
-
-  // try single letter anywhere (e.g., "my answer is a")
-  const letterMatch = t.match(/\b([a-d])\b/);
-  if (letterMatch) return letterMatch[1].toUpperCase();
-
-  // The user might speak the whole option text — try matching to current options
-  const q = quizData[currentQuestion];
-  if (q && q.options) {
-    for (let i = 0; i < q.options.length; i++) {
-      const optNormalized = q.options[i].toLowerCase().replace(/[<>\W_]+/g,' ').trim();
-      if (optNormalized.length === 0) continue;
-      // check if transcript contains option words or vice versa (loose)
-      if (t.includes(optNormalized) || optNormalized.includes(t)) {
-        return ['A','B','C','D'][i];
-      }
-    }
-  }
-
-  return null;
+  if (t.includes("option a") || t.includes("answer a") || t.includes("first")) return "A";
+  if (t.includes("option b") || t.includes("answer b") || t.includes("second")) return "B";
+  if (t.includes("option c") || t.includes("answer c") || t.includes("third")) return "C";
+  if (t.includes("option d") || t.includes("answer d") || t.includes("fourth")) return "D";
+  const match = t.match(/\b([a-d])\b/);
+  return match ? match[1].toUpperCase() : null;
 }
 
-/* ---------- Recognition setup ---------- */
 let recognition;
 if (supportsRecognition) {
   recognition = new SpeechRecognition();
   recognition.lang = 'en-US';
   recognition.interimResults = false;
-  recognition.continuous = false; // start/stop per question
+  recognition.continuous = false;
 }
 
-/* ---------- Start listening only after TTS finished ---------- */
 function startRecognitionAfterTTS() {
-  if (!supportsRecognition) return;
-  if (!voiceEnabled) return; // don't start if voice disabled
-  // small safety delay after TTS ends to avoid picking up remaining audio
+  if (!supportsRecognition || !voiceEnabled) return;
   setTimeout(() => {
     try {
       recognition.start();
       recognitionActive = true;
       startBtn.textContent = '🛑 Listening...';
-      recognition.onend = () => {
-        recognitionActive = false;
-        startBtn.textContent = '🎙️ Start Listening';
-        // If we expected an answer and recognition ended without result, restart listening
-        // but only if still expecting answer and voice enabled.
-        if (expectingAnswer && voiceEnabled) {
-          // short delay to avoid tight loop
-          setTimeout(() => { if (expectingAnswer && voiceEnabled) startRecognitionAfterTTS(); }, 600);
-        }
-      };
-    } catch (e) {
-      // some browsers may throw if start called too soon; ignore
-      recognitionActive = false;
-    }
-  }, 250); // 250ms safety gap
+    } catch {}
+  }, 300);
 }
 
-/* ---------- Handle recognition results ---------- */
 if (supportsRecognition) {
   recognition.onresult = (ev) => {
-    // combine results
-    const transcript = Array.from(ev.results).map(r => r[0].transcript).join(' ').trim();
-    console.log('Raw transcript:', transcript);
+    const transcript = ev.results[0][0].transcript.trim();
     recognitionActive = false;
     startBtn.textContent = '🎙️ Start Listening';
     expectingAnswer = false;
     handleSpokenAnswer(transcript);
   };
-
-  recognition.onerror = (err) => {
-    console.warn('Recognition error', err);
+  recognition.onend = () => {
     recognitionActive = false;
     startBtn.textContent = '🎙️ Start Listening';
+  };
+  recognition.onerror = () => {
+    recognitionActive = false;
     if (expectingAnswer && voiceEnabled) {
-      // prompt user and re-listen
-      speakPromise("I couldn't hear you clearly. Please say A, B, C, or D.").then(() => {
-        if (voiceEnabled) { expectingAnswer = true; startRecognitionAfterTTS(); }
-      });
+      speakPromise("Please repeat your answer.").then(() => startRecognitionAfterTTS());
     }
   };
 }
 
-/* ---------- Render question & speak ---------- */
 async function loadQuestion() {
   expectingAnswer = false;
   resultEl.textContent = '';
   const q = quizData[currentQuestion];
   questionEl.textContent = `Q${currentQuestion+1}: ${q.question}`;
   optionsEl.innerHTML = q.options.map((opt, i) =>
-    `<div class="option" aria-hidden="false"><strong>${String.fromCharCode(65+i)}.</strong> ${opt}</div>`
+    `<div class="option"><strong>${String.fromCharCode(65+i)}.</strong> ${opt}</div>`
   ).join('');
 
-  // build the speech text
   let text = `Question ${currentQuestion+1}. ${q.question}. `;
-  q.options.forEach((opt, i) => { text += `Option ${String.fromCharCode(65+i)}: ${opt}. `; });
-  text += 'Please say A, B, C, or D.';
+  q.options.forEach((opt, i) => { text += `Option ${String.fromCharCode(65+i)}. ${opt.replace(/&lt;|&gt;/g,'')}. `; });
+  text += "Say A, B, C, or D.";
 
-  // speak and then start recognition
   await speakPromise(text);
   if (!voiceEnabled) return;
   expectingAnswer = true;
   startRecognitionAfterTTS();
 }
 
-/* ---------- Process spoken answer ---------- */
 function handleSpokenAnswer(transcript) {
   const letter = normalizeTranscript(transcript);
-  console.log('Normalized ->', letter);
   if (!letter) {
-    // didn't match — ask to repeat and re-listen
-    speakPromise("I didn't catch a valid option. Please say A, B, C, or D.").then(() => {
-      if (voiceEnabled) { expectingAnswer = true; startRecognitionAfterTTS(); }
+    speakPromise("I didn't catch that. Please say A, B, C, or D.").then(() => {
+      expectingAnswer = true; startRecognitionAfterTTS();
     });
     return;
   }
-  // check answer
   checkAnswer(letter);
 }
 
-/* ---------- Check and advance ---------- */
 function checkAnswer(letter) {
   const correct = quizData[currentQuestion].answer;
   if (letter === correct) {
     score++;
-    resultEl.textContent = '✅ Correct!';
+    resultEl.textContent = "✅ Correct!";
     speakPromise("Correct.").then(() => {
       currentQuestion++;
-      if (currentQuestion < quizData.length) {
-        loadQuestion();
-      } else {
-        endQuiz();
-      }
+      currentQuestion < quizData.length ? loadQuestion() : endQuiz();
     });
   } else {
     resultEl.textContent = `❌ Wrong. The correct answer is ${correct}.`;
-    // speak correct, then proceed to next question
     speakPromise(`Wrong. The correct answer is ${correct}.`).then(() => {
       currentQuestion++;
-      if (currentQuestion < quizData.length) {
-        loadQuestion();
-      } else {
-        endQuiz();
-      }
+      currentQuestion < quizData.length ? loadQuestion() : endQuiz();
     });
   }
 }
 
-/* ---------- End quiz ---------- */
 function endQuiz() {
-  const msg = `Quiz completed. You scored ${score} out of ${quizData.length}.`;
-  questionEl.textContent = '🎉 Quiz Completed!';
-  optionsEl.innerHTML = '';
+  const msg = `Quiz finished. You scored ${score} of ${quizData.length}.`;
+  questionEl.textContent = "🎉 Quiz Completed!";
+  optionsEl.innerHTML = "";
   resultEl.textContent = msg;
   speakPromise(msg);
-  // stop listening controls
   stopAllRecognitionAndSpeech();
-  startBtn.style.display = 'none';
-  voiceToggle.style.display = 'none';
-}
-
-/* ---------- Controls: start/stop recognition, toggle voice ---------- */
-function startListeningManual() {
-  if (!supportsRecognition) return;
-  if (!voiceEnabled) { speakPromise("Voice is off. Turn voice on to listen."); return; }
-  // if TTS is speaking, wait until it's done, then start recognition
-  window.speechSynthesis.cancel(); // stop any TTS immediately so user can speak
-  expectingAnswer = true;
-  startRecognitionAfterTTS();
 }
 
 function stopAllRecognitionAndSpeech() {
   expectingAnswer = false;
-  if (supportsRecognition && recognitionActive) {
-    try { recognition.abort(); } catch(e) {}
-  }
+  if (recognitionActive) recognition.abort();
   recognitionActive = false;
-  if (supportsTTS) window.speechSynthesis.cancel();
-  startBtn.textContent = '🎙️ Start Listening';
+  window.speechSynthesis.cancel();
 }
 
-/* ---------- Voice toggle ---------- */
-voiceToggle.addEventListener('click', () => {
+voiceToggle.addEventListener("click", () => {
   voiceEnabled = !voiceEnabled;
-  voiceToggle.textContent = voiceEnabled ? '🔊 Voice: ON' : '🔇 Voice: OFF';
-  voiceToggle.classList.toggle('muted', !voiceEnabled);
-  if (!voiceEnabled) {
-    // stop everything
-    stopAllRecognitionAndSpeech();
-  } else {
-    // resume by repeating current question so user hears context
-    speakPromise("Voice resumed.").then(() => {
-      // only reload if quiz not finished
-      if (currentQuestion < quizData.length) loadQuestion();
-    });
-  }
+  voiceToggle.textContent = voiceEnabled ? "🔊 Voice: ON" : "🔇 Voice: OFF";
+  voiceToggle.classList.toggle("muted", !voiceEnabled);
+  if (!voiceEnabled) stopAllRecognitionAndSpeech();
+  else speakPromise("Voice resumed.").then(loadQuestion);
 });
 
-/* ---------- Start button (manual start/stop) ---------- */
-startBtn.addEventListener('click', () => {
-  if (!supportsRecognition) return;
+startBtn.addEventListener("click", () => {
   if (recognitionActive) {
-    // stop it
-    try { recognition.abort(); } catch(e) {}
+    recognition.abort();
     recognitionActive = false;
-    startBtn.textContent = '🎙️ Start Listening';
-    expectingAnswer = false;
-  } else {
-    // start listening (manual)
-    if (!voiceEnabled) {
-      speakPromise("Voice is currently off. Turn voice on to listen.");
-      return;
-    }
-    // stop TTS if speaking, then start immediate listening
-    window.speechSynthesis.cancel();
-    expectingAnswer = true;
-    startRecognitionAfterTTS();
-  }
-});
-
-/* ---------- Back button: stop and go to courses.html ---------- */
-backBtn.addEventListener('click', () => {
-  stopAllRecognitionAndSpeech();
-  // small delay to ensure speech stopped, then navigate
-  setTimeout(() => { window.location.href = 'courses.html'; }, 150);
-});
-
-/* ---------- Stop when page hidden or unloading ---------- */
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopAllRecognitionAndSpeech();
-});
-window.addEventListener('beforeunload', () => stopAllRecognitionAndSpeech());
-
-/* ---------- Kick off: welcome + first question ---------- */
-(async function startFlow() {
-  if (!supportsRecognition) {
-    // just speak and show question (or show message)
-    await speakPromise("Speech recognition is not supported in this browser. Please use Chrome on desktop or Android for voice input.");
-    // still render first question visually
-    currentQuestion = 0;
-    questionEl.textContent = `Q1: ${quizData[0].question}`;
-    optionsEl.innerHTML = quizData[0].options.map((opt,i)=>`<div class="option"><strong>${String.fromCharCode(65+i)}.</strong> ${opt}</div>`).join('');
+    startBtn.textContent = "🎙️ Start Listening";
     return;
   }
-  // Welcome message then load question (loadQuestion will TTS and then start recognition)
-  await speakPromise("Welcome to the HTML voice quiz. I will read each question and the options. Answer by saying A, B, C, or D. Press Start Listening if you prefer to trigger listening yourself.");
+  window.speechSynthesis.cancel();
+  expectingAnswer = true;
+  startRecognitionAfterTTS();
+});
+
+backBtn.addEventListener("click", () => {
+  stopAllRecognitionAndSpeech();
+  setTimeout(() => (window.location.href = "courses.html"), 200);
+});
+
+window.addEventListener("beforeunload", stopAllRecognitionAndSpeech);
+
+(async function startQuiz() {
+  await speakPromise("Welcome to the HTML voice quiz. Let's begin.");
   loadQuestion();
 })();
 </script>
